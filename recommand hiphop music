@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>오늘의 힙합 추천</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Song+Myung&family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#efe7d8;
+    --ink-dim:#a89f8c;
+    --bg:#141217;
+    --bg-raised:#1b1820;
+    --vinyl:#0d0c10;
+    --label:#e7a53c;
+    --label-deep:#c47f1f;
+    --accent:#a855f7;
+    --accent-deep:#8b2fe0;
+    --line: rgba(239,231,216,0.14);
+    --radius: 3px;
+  }
+  :root:not([data-theme="light"]){ color-scheme: dark; }
+
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Noto Sans KR', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  body{
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    background-image:
+      radial-gradient(circle at 15% 8%, rgba(168,85,247,0.1), transparent 45%),
+      radial-gradient(circle at 85% 92%, rgba(139,47,224,0.08), transparent 40%);
+  }
+  ::selection{ background:var(--accent); color:#fff; }
+
+  .wrap{ max-width:920px; margin:0 auto; padding:20px 20px 80px; }
+
+  .topnav{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:24px;
+    flex-wrap:wrap;
+  }
+  .nav-links{ display:flex; gap:8px; flex-wrap:wrap; }
+  .nav-link{
+    font-size:13px;
+    color:var(--ink-dim);
+    text-decoration:none;
+    border:1px solid var(--line);
+    border-radius:100px;
+    padding:8px 14px;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .nav-link:hover{ color:var(--ink); border-color:var(--accent); }
+  .site-mark{ font-size:12px; color:var(--ink-dim); letter-spacing:0.02em; }
+
+  .hero{
+    display:flex;
+    align-items:center;
+    gap:28px;
+    padding-bottom:30px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:28px;
+  }
+  .hero-text{ flex:1; min-width:0; }
+  .kicker{ font-size:13px; color:var(--accent); margin:0 0 8px; }
+  h1{
+    font-family:'Song Myung', serif;
+    font-weight:400;
+    font-size:clamp(28px,6vw,42px);
+    line-height:1.25;
+    margin:0 0 10px;
+    color:var(--ink);
+  }
+  .hero-desc{ margin:0; color:var(--ink-dim); font-size:14.5px; line-height:1.65; max-width:46ch; }
+  .disc-badge{ flex-shrink:0; width:96px; height:96px; }
+  .disc-badge svg{ width:100%; height:100%; }
+  .disc-badge .ring{ animation: spin 9s linear infinite; transform-origin:50% 50%; }
+  @media (prefers-reduced-motion: reduce){ .disc-badge .ring{ animation:none; } }
+
+  .section-label{ font-size:12.5px; color:var(--ink-dim); margin:0 0 12px; }
+  .moods{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:26px; }
+  .mood-btn{
+    font-family:inherit;
+    font-size:13.5px;
+    color:var(--ink);
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    padding:9px 15px;
+    border-radius:100px;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease, color .15s ease;
+    white-space:nowrap;
+  }
+  .mood-btn:hover{ border-color:var(--accent-deep); }
+  .mood-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .mood-btn.active{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+
+  .controls{ display:flex; gap:10px; margin-bottom:28px; flex-wrap:wrap; }
+  .search-box{ flex:1; min-width:180px; }
+  .search-box input{
+    width:100%;
+    font-family:inherit;
+    font-size:14px;
+    color:var(--ink);
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:12px 14px;
+  }
+  .search-box input::placeholder{ color:var(--ink-dim); }
+  .search-box input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+
+  .random-btn{
+    font-family:inherit;
+    font-size:14px;
+    font-weight:600;
+    color:#fff;
+    background:linear-gradient(180deg, #c084fc, var(--accent-deep));
+    border:none;
+    border-radius:var(--radius);
+    padding:12px 18px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .random-btn:hover{ filter:brightness(1.08); }
+  .random-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+
+  .stage{ display:grid; grid-template-columns: 220px 1fr; gap:30px; align-items:start; }
+  @media (max-width:640px){ .stage{ grid-template-columns:1fr; } }
+
+  .player{
+    position:sticky; top:16px;
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:22px 18px 18px;
+  }
+  .platter{ position:relative; width:100%; aspect-ratio:1/1; margin:0 auto 16px; }
+  .vinyl-disc{
+    position:absolute; inset:0;
+    border-radius:50%;
+    background: repeating-radial-gradient(circle at 50% 50%, var(--vinyl) 0 2px, #17151b 2px 4px);
+    box-shadow: 0 10px 26px rgba(0,0,0,0.5), 0 0 30px rgba(168,85,247,0.08), inset 0 0 0 1px rgba(255,255,255,0.03);
+    animation: spin 2.8s linear infinite;
+    animation-play-state: paused;
+  }
+  .vinyl-disc.spinning{ animation-play-state: running; }
+  @media (prefers-reduced-motion: reduce){ .vinyl-disc{ animation:none !important; } }
+
+  .vinyl-label{
+    position:absolute; left:50%; top:50%;
+    width:38%; height:38%;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    background: linear-gradient(135deg, #c084fc, var(--accent-deep));
+    display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:6%;
+    box-shadow:0 0 0 1px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .vinyl-label-inner{ font-size:9.5px; line-height:1.35; color:#fff; font-weight:700; overflow:hidden; }
+  .vinyl-label-inner .t{ display:block; font-size:10.5px; margin-bottom:2px; }
+  .vinyl-label-inner .a{ display:block; font-weight:500; opacity:0.85; font-size:9px; }
+  .vinyl-spindle{
+    position:absolute; left:50%; top:50%;
+    width:6px; height:6px; transform:translate(-50%,-50%);
+    background:#0a090c; border-radius:50%; z-index:2;
+  }
+  .tonearm{
+    position:absolute; top:-6%; right:-8%; width:44%; height:44%;
+    transform-origin: 88% 12%;
+    transform: rotate(-24deg);
+    transition: transform .5s cubic-bezier(.4,0,.2,1);
+    pointer-events:none;
+  }
+  .tonearm.down{ transform: rotate(2deg); }
+  .tonearm svg{ width:100%; height:100%; overflow:visible; }
+
+  .now-playing{ text-align:center; }
+  .now-playing .np-label{ font-size:11px; color:var(--ink-dim); margin:0 0 4px; }
+  .now-playing .np-title{ font-family:'Song Myung', serif; font-size:16px; margin:0 0 2px; color:var(--ink); }
+  .now-playing .np-artist{ font-size:12.5px; color:var(--ink-dim); margin:0 0 12px; }
+  .np-actions{ display:flex; gap:8px; justify-content:center; align-items:center; }
+  .np-spotify{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12.5px; font-weight:600; color:#1a1509;
+    background:#3fc464; border:none; border-radius:100px;
+    padding:8px 14px; cursor:pointer; text-decoration:none;
+  }
+  .np-spotify:hover{ filter:brightness(1.05); }
+  .np-heart{
+    width:32px; height:32px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:var(--bg);
+    color:var(--ink-dim);
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px;
+  }
+  .np-heart.active{ color:var(--accent); border-color:var(--accent); }
+  .np-empty{ font-size:12.5px; color:var(--ink-dim); line-height:1.6; }
+
+  .list-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
+  .track-count{ font-size:12px; color:var(--ink-dim); }
+
+  .track-list{ border-top:1px solid var(--line); }
+  .track{
+    display:flex; align-items:center; gap:14px;
+    padding:13px 4px; border-bottom:1px solid var(--line);
+    cursor:pointer; background:transparent; transition:background .12s ease;
+  }
+  .track:hover{ background:rgba(239,231,216,0.035); }
+  .track.selected{ background:rgba(168,85,247,0.1); }
+  .track-num{ width:24px; flex-shrink:0; font-size:12px; color:var(--ink-dim); text-align:right; font-variant-numeric: tabular-nums; }
+  .track-info{ flex:1; min-width:0; }
+  .track-title{ font-size:14.5px; color:var(--ink); margin:0 0 3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .track-artist{ font-size:12.5px; color:var(--ink-dim); margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .track-mood-tag{
+    flex-shrink:0; font-size:11px; color:var(--ink-dim);
+    border:1px solid var(--line); border-radius:100px; padding:4px 9px; display:none;
+  }
+  @media (min-width:560px){ .track-mood-tag{ display:inline-block; } }
+
+  .track-heart{
+    flex-shrink:0; width:30px; height:30px; border-radius:50%;
+    border:1px solid var(--line); background:var(--bg-raised);
+    color:var(--ink-dim); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:13px;
+  }
+  .track-heart.active{ color:var(--accent); border-color:var(--accent); }
+
+  .track-spotify{
+    flex-shrink:0; width:30px; height:30px; border-radius:50%;
+    border:1px solid var(--line); background:var(--bg-raised);
+    color:var(--ink-dim); display:flex; align-items:center; justify-content:center; cursor:pointer;
+    text-decoration:none;
+  }
+  .track-spotify:hover{ border-color:#3fc464; color:#3fc464; }
+  .track-spotify svg{ width:14px; height:14px; }
+
+  .empty-state{ padding:40px 10px; text-align:center; color:var(--ink-dim); font-size:13.5px; }
+
+  @keyframes spin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topnav">
+    <span class="site-mark">TODAY'S PICK · 힙합</span>
+    <div class="nav-links">
+      <a class="nav-link" href="https://claude.ai/artifact/MAJCu5QNZtMPTVqHB6PtoF">밴드 추천</a>
+      <a class="nav-link" href="https://claude.ai/artifact/UZuEJimYMUXLTVVVReFEkJ">발라드 추천</a>
+      <a class="nav-link" href="https://claude.ai/artifact/T5YXy2hAvFD1SE9DhhGkRW">팝 & 인디 추천</a>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-text">
+      <p class="kicker">TODAY'S HIP-HOP PICK</p>
+      <h1>오늘의 힙합 추천</h1>
+      <p class="hero-desc">광기 어린 다크함부터 칠한 로파이까지, 지금 원하는 비트와 텐션을 고르면 그에 맞는 트랙을 골라드려요.</p>
+    </div>
+    <div class="disc-badge" aria-hidden="true">
+      <svg viewBox="0 0 100 100">
+        <g class="ring">
+          <circle cx="50" cy="50" r="46" fill="#0d0c10" stroke="rgba(239,231,216,0.1)" stroke-width="1"/>
+          <circle cx="50" cy="50" r="36" fill="none" stroke="rgba(239,231,216,0.06)" stroke-width="1"/>
+          <circle cx="50" cy="50" r="26" fill="none" stroke="rgba(239,231,216,0.06)" stroke-width="1"/>
+        </g>
+        <circle cx="50" cy="50" r="16" fill="#a855f7"/>
+        <circle cx="50" cy="50" r="2.4" fill="#0d0c10"/>
+      </svg>
+    </div>
+  </div>
+
+  <p class="section-label">지금 원하는 텐션은?</p>
+  <div class="moods" id="moodButtons" role="group" aria-label="곡 분위기 선택"></div>
+
+  <div class="controls">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="곡 제목이나 아티스트로 검색" aria-label="곡 검색">
+    </div>
+    <button class="random-btn" id="randomBtn" type="button">오늘의 비트 추천 🎲</button>
+  </div>
+
+  <div class="stage">
+    <div class="player">
+      <div class="platter">
+        <div class="tonearm" id="tonearm" aria-hidden="true">
+          <svg viewBox="0 0 100 100">
+            <circle cx="88" cy="12" r="7" fill="#2a2731" stroke="rgba(239,231,216,0.2)" stroke-width="1"/>
+            <line x1="88" y1="12" x2="18" y2="86" stroke="#c9c1ae" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="18" cy="86" r="3.5" fill="#c9c1ae"/>
+          </svg>
+        </div>
+        <div class="vinyl-disc" id="vinylDisc">
+          <div class="vinyl-label">
+            <div class="vinyl-label-inner" id="vinylLabelText">
+              <span class="t">선곡 전</span>
+              <span class="a">곡을 골라주세요</span>
+            </div>
+          </div>
+          <div class="vinyl-spindle"></div>
+        </div>
+      </div>
+      <div class="now-playing" id="nowPlaying">
+        <p class="np-empty">아래에서 곡을 고르거나<br>랜덤 추천을 눌러보세요.</p>
+      </div>
+    </div>
+
+    <div class="list-area">
+      <div class="list-head">
+        <p class="section-label" id="listTitle" style="margin:0;">전체 곡</p>
+        <span class="track-count" id="trackCount"></span>
+      </div>
+      <div class="track-list" id="trackList"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const hiphopSongDatabase = [
+  { id: 1, title: "JOKER (Feat. JAMIE)", artist: "BIG Naughty (서동현)", mood: "Joker (광기/다크)" },
+  { id: 2, title: "METEOR", artist: "창모 (CHANGMO)", mood: "Joker (광기/다크)" },
+  { id: 3, title: "Paranoid", artist: "ASH ISLAND", mood: "Joker (광기/다크)" },
+  { id: 4, title: "널 잡아먹을 거야", artist: "씨잼 (C Jamm)", mood: "Joker (광기/다크)" },
+  { id: 5, title: "헬리콥터", artist: "한요한", mood: "Joker (광기/다크)" },
+  { id: 6, title: "불도저", artist: "스윙스", mood: "Joker (광기/다크)" },
+  { id: 7, title: "정이라고 하자 (Feat. 10CM)", artist: "BIG Naughty (서동현)", mood: "트렌디 싱잉랩" },
+  { id: 8, title: "MELODY", artist: "ASH ISLAND", mood: "트렌디 싱잉랩" },
+  { id: 9, title: "Counting Stars", artist: "BE'O", mood: "트렌디 싱잉랩" },
+  { id: 10, title: "리무진", artist: "BE'O", mood: "트렌디 싱잉랩" },
+  { id: 11, title: "곡예사", artist: "조광일", mood: "트렌디 싱잉랩" },
+  { id: 12, title: "아무노래", artist: "지코 (ZICO)", mood: "트렌디 싱잉랩" },
+  { id: 13, title: "시차 (We Are)", artist: "우원재", mood: "새벽/몽환" },
+  { id: 14, title: "D (Half Moon)", artist: "DEAN", mood: "새벽/몽환" },
+  { id: 15, title: "Jasmine", artist: "DPR LIVE", mood: "새벽/몽환" },
+  { id: 16, title: "어떻게 지내", artist: "오반", mood: "새벽/몽환" },
+  { id: 17, title: "호구", artist: "기리보이", mood: "새벽/몽환" },
+  { id: 18, title: "SPOT! (feat. JENNIE)", artist: "지코 (ZICO)", mood: "신나는 비트" },
+  { id: 19, title: "Artist", artist: "지코 (ZICO)", mood: "신나는 비트" },
+  { id: 20, title: "Aqua Man", artist: "빈지노", mood: "신나는 비트" },
+  { id: 21, title: "마에스트로", artist: "창모 (CHANGMO)", mood: "신나는 비트" },
+  { id: 22, title: "AEAO", artist: "다이나믹 듀오", mood: "신나는 비트" },
+  { id: 23, title: "지동설", artist: "기리보이", mood: "칠/로파이" },
+  { id: 24, title: "시공간", artist: "코드쿤스트", mood: "칠/로파이" },
+  { id: 25, title: "Homebody", artist: "pH-1", mood: "칠/로파이" },
+  { id: 26, title: "잊어버리지마", artist: "크러쉬", mood: "칠/로파이" },
+  { id: 27, title: "Break", artist: "빈지노", mood: "칠/로파이" }
+];
+
+const moods = ["Joker (광기/다크)", "트렌디 싱잉랩", "새벽/몽환", "신나는 비트", "칠/로파이"];
+
+let activeMood = null;
+let searchTerm = "";
+let selectedId = null;
+let favorites = [];
+
+try{
+  favorites = JSON.parse(localStorage.getItem('hiphop_favs') || '[]');
+}catch(e){ favorites = []; }
+
+function saveFavorites(){
+  try{ localStorage.setItem('hiphop_favs', JSON.stringify(favorites)); }
+  catch(e){ /* storage unavailable, ignore */ }
+}
+
+const moodButtonsEl = document.getElementById('moodButtons');
+const trackListEl = document.getElementById('trackList');
+const listTitleEl = document.getElementById('listTitle');
+const trackCountEl = document.getElementById('trackCount');
+const vinylDisc = document.getElementById('vinylDisc');
+const vinylLabelText = document.getElementById('vinylLabelText');
+const tonearm = document.getElementById('tonearm');
+const nowPlayingEl = document.getElementById('nowPlaying');
+const searchInput = document.getElementById('searchInput');
+const randomBtn = document.getElementById('randomBtn');
+
+function spotifyUrl(song){
+  const q = encodeURIComponent(song.artist + " " + song.title);
+  return "https://open.spotify.com/search/" + q;
+}
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderMoodButtons(){
+  moodButtonsEl.innerHTML = "";
+  const allBtn = document.createElement('button');
+  allBtn.className = 'mood-btn' + (activeMood === null ? ' active' : '');
+  allBtn.type = 'button';
+  allBtn.textContent = '전체';
+  allBtn.addEventListener('click', () => { activeMood = null; renderTrackList(); renderMoodButtons(); });
+  moodButtonsEl.appendChild(allBtn);
+
+  moods.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'mood-btn' + (activeMood === m ? ' active' : '');
+    btn.type = 'button';
+    btn.textContent = m;
+    btn.addEventListener('click', () => { activeMood = m; renderTrackList(); renderMoodButtons(); });
+    moodButtonsEl.appendChild(btn);
+  });
+}
+
+function getFilteredSongs(){
+  return hiphopSongDatabase.filter(song => {
+    const matchesMood = activeMood === null || song.mood === activeMood;
+    const term = searchTerm.trim().toLowerCase();
+    const matchesSearch = term === "" ||
+      song.title.toLowerCase().includes(term) ||
+      song.artist.toLowerCase().includes(term);
+    return matchesMood && matchesSearch;
+  });
+}
+
+function renderTrackList(){
+  const songs = getFilteredSongs();
+  listTitleEl.textContent = activeMood === null ? '전체 곡' : activeMood;
+  trackCountEl.textContent = songs.length + '곡';
+  trackListEl.innerHTML = "";
+
+  if(songs.length === 0){
+    const div = document.createElement('div');
+    div.className = 'empty-state';
+    div.textContent = '조건에 맞는 곡이 없어요. 다른 텐션이나 검색어로 찾아보세요.';
+    trackListEl.appendChild(div);
+    return;
+  }
+
+  songs.forEach((song, i) => {
+    const isFav = favorites.includes(song.id);
+    const row = document.createElement('div');
+    row.className = 'track' + (selectedId === song.id ? ' selected' : '');
+    row.setAttribute('role','button');
+    row.setAttribute('tabindex','0');
+
+    const num = document.createElement('span');
+    num.className = 'track-num';
+    num.textContent = String(i + 1).padStart(2,'0');
+
+    const info = document.createElement('div');
+    info.className = 'track-info';
+    const t = document.createElement('p');
+    t.className = 'track-title';
+    t.textContent = song.title;
+    const a = document.createElement('p');
+    a.className = 'track-artist';
+    a.textContent = song.artist;
+    info.appendChild(t);
+    info.appendChild(a);
+
+    const tag = document.createElement('span');
+    tag.className = 'track-mood-tag';
+    tag.textContent = song.mood;
+
+    const heart = document.createElement('button');
+    heart.className = 'track-heart' + (isFav ? ' active' : '');
+    heart.type = 'button';
+    heart.title = '좋아하는 곡으로 저장';
+    heart.textContent = '♥';
+    heart.addEventListener('click', (e) => { e.stopPropagation(); toggleFav(song.id); });
+
+    const sp = document.createElement('a');
+    sp.className = 'track-spotify';
+    sp.href = spotifyUrl(song);
+    sp.target = '_blank';
+    sp.rel = 'noopener';
+    sp.title = 'Spotify에서 듣기';
+    sp.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.59 14.4c-.19.31-.6.4-.9.21-2.47-1.51-5.58-1.85-9.24-1.01-.35.08-.7-.14-.78-.49-.08-.35.14-.7.49-.78 4.01-.92 7.45-.52 10.22 1.17.31.19.4.6.21.9zm1.22-2.72c-.24.39-.75.51-1.14.27-2.83-1.74-7.14-2.24-10.49-1.23-.44.13-.9-.12-1.03-.55-.13-.44.12-.9.55-1.03 3.82-1.16 8.57-.6 11.83 1.4.39.24.51.75.28 1.14zm.11-2.83C14.39 8.75 8.65 8.55 5.44 9.53c-.52.16-1.07-.14-1.23-.65-.16-.52.14-1.07.65-1.23 3.68-1.12 10.02-.9 13.93 1.42.47.28.62.88.34 1.35-.28.46-.88.62-1.34.34z"/></svg>';
+    sp.addEventListener('click', (e) => e.stopPropagation());
+
+    row.appendChild(num);
+    row.appendChild(info);
+    row.appendChild(tag);
+    row.appendChild(heart);
+    row.appendChild(sp);
+
+    row.addEventListener('click', () => selectSong(song));
+    row.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); selectSong(song); }
+    });
+
+    trackListEl.appendChild(row);
+  });
+}
+
+function selectSong(song){
+  selectedId = song.id;
+  const isFav = favorites.includes(song.id);
+
+  vinylLabelText.innerHTML = '<span class="t">' + escapeHtml(song.title) + '</span><span class="a">' + escapeHtml(song.artist) + '</span>';
+
+  vinylDisc.classList.remove('spinning');
+  void vinylDisc.offsetWidth;
+  vinylDisc.classList.add('spinning');
+
+  tonearm.classList.remove('down');
+  void tonearm.offsetWidth;
+  requestAnimationFrame(() => tonearm.classList.add('down'));
+
+  nowPlayingEl.innerHTML =
+    '<p class="np-label">NOW SPINNING</p>' +
+    '<p class="np-title">' + escapeHtml(song.title) + '</p>' +
+    '<p class="np-artist">' + escapeHtml(song.artist) + ' · ' + escapeHtml(song.mood) + '</p>' +
+    '<div class="np-actions">' +
+      '<a class="np-spotify" href="' + spotifyUrl(song) + '" target="_blank" rel="noopener">Spotify에서 듣기</a>' +
+      '<button class="np-heart' + (isFav ? ' active' : '') + '" id="npHeartBtn" type="button" title="좋아하는 곡으로 저장">♥</button>' +
+    '</div>';
+
+  document.getElementById('npHeartBtn').addEventListener('click', () => toggleFav(song.id));
+
+  renderTrackList();
+}
+
+function toggleFav(id){
+  if(favorites.includes(id)){
+    favorites = favorites.filter(f => f !== id);
+  } else {
+    favorites.push(id);
+  }
+  saveFavorites();
+  renderTrackList();
+  if(selectedId === id){
+    const song = hiphopSongDatabase.find(s => s.id === id);
+    if(song) selectSong(song);
+  }
+}
+
+searchInput.addEventListener('input', (e) => {
+  searchTerm = e.target.value;
+  renderTrackList();
+});
+
+randomBtn.addEventListener('click', () => {
+  const pool = getFilteredSongs();
+  if(pool.length === 0) return;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  selectSong(pick);
+});
+
+renderMoodButtons();
+renderTrackList();
+</script>
+</body>
+</html>
